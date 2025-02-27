@@ -1,122 +1,296 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { logout } from "../redux/auth/authSlice";
-import Card from "../components/sell/sellCard";
-import Filters from "../components/sell/Filter";
-import CategoryForm from "../components/account/AddForm";
-import Settings from "../components/account/Settings";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Notifications from "../components/account/Notifications";
-import { addItem } from "../redux/slices/categorySlice";
+import {
+  productsThunks,
+  exchangeThunks,
+  doneThunks,
+  freelanceThunks,
+  transportThunks,
+} from "../redux/slices/categorySlice";
+import useCloudinaryUpload from "../hooks/useCloudinaryUpload";
+import {
+  selectAllCategories,
+  selectCategoriesLoading,
+  selectCategoriesError,
+} from "../redux/slices/selectors/categorySelectors";
+import ListingsSection from "../components/account/Listings";
+import ProfileSection from "../components/account/Profile";
+import ProductForm from "../components/account/ProductForm";
+import ExchangeForm from "../components/account/ExchangeForm";
+import TransportForm from "../components/account/TransportForm";
+import FreelanceForm from "../components/account/FreelanceForm";
+import DoneForm from "../components/account/DoneForm";
+import { Product } from "../models/ProductModel";
+import { Exchange } from "../models/ExchangeModel";
+import { Transport } from "../models/TransportModel";
+import { Freelance } from "../models/FreelanceModel";
+import { Done } from "../models/DoneModel";
 
+// Category configurations
 const categoryModels = {
-  Products: { name: "", description: "", price: "", image: null },
-  Exchange: {
-    itemOffered: "",
-    itemWanted: "",
-    condition: "",
-    location: "",
-    image: null,
-  },
-  Done: { taskTitle: "", completionDate: "", remarks: "", proofImage: null },
-  Freelance: {
-    gigTitle: "",
-    category: "",
-    price: "",
-    deliveryTime: "",
-    image: null,
-  },
-  Transport: {
-    vehicleType: "",
-    capacity: "",
-    route: "",
-    price: "",
-    image: null,
-  },
+  Products: () => new Product({}),
+  Exchange: () => new Exchange({}),
+  Done: () => new Done({}),
+  Freelance: () => new Freelance({}),
+  Transport: () => new Transport({}),
 };
 
+const categoryModelsSubmit = {
+  Products: Product,
+  Exchange: Exchange,
+  Done: Done,
+  Freelance: Freelance,
+  Transport: Transport,
+};
+
+const formComponents = {
+  Products: ProductForm,
+  Exchange: ExchangeForm,
+  Transport: TransportForm,
+  Freelance: FreelanceForm,
+  Done: DoneForm,
+};
+
+// Utility functions
+const convertDatesToStrings = (obj) => {
+  const result = { ...obj };
+  for (const key in result) {
+    if (result[key] instanceof Date) {
+      result[key] = result[key].toISOString().split("T")[0];
+    } else if (typeof result[key] === "object" && result[key] !== null) {
+      result[key] = convertDatesToStrings(result[key]);
+    }
+  }
+  return result;
+};
+
+const convertStringsToDates = (obj, dateFields) => {
+  const result = { ...obj };
+  dateFields.forEach((field) => {
+    if (result[field] && typeof result[field] === "string") {
+      result[field] = new Date(result[field]);
+    }
+  });
+  return result;
+};
+
+// FormWrapper Component: Manages individual form state and logic
+const FormWrapper = ({ category, onSubmit, uploadImage, isLoading }) => {
+  const [formData, setFormData] = useState(() => {
+    const model = categoryModels[category]();
+    return convertDatesToStrings(model);
+  });
+  const [localUploadError, setLocalUploadError] = useState(null);
+
+  // Handle form input changes, including files and nested fields
+  const handleFormChange = async (e) => {
+    const { name, value, type, files } = e.target;
+
+    if (type === "file" && files.length > 0) {
+      try {
+        const uploadedImageUrls = await Promise.all(
+          Array.from(files).map(uploadImage)
+        );
+        if (uploadedImageUrls.length > 0) {
+          const imageField = category === "Done" ? "proofImages" : "images";
+          setFormData((prev) => ({
+            ...prev,
+            [imageField]: [
+              ...(Array.isArray(prev[imageField]) ? prev[imageField] : []),
+              ...uploadedImageUrls,
+            ],
+          }));
+          setLocalUploadError(null);
+        }
+      } catch (error) {
+        setLocalUploadError(`Image upload failed: ${error.message}`);
+      }
+    } else if (name.includes(".")) {
+      const [arrayName, index, field] = name.split(/[\].]+/);
+      const parsedIndex = parseInt(index);
+      setFormData((prev) => {
+        const currentArray = Array.isArray(prev[arrayName])
+          ? prev[arrayName]
+          : [];
+        const updatedArray = [...currentArray];
+        while (updatedArray.length <= parsedIndex) updatedArray.push({});
+        updatedArray[parsedIndex] = {
+          ...updatedArray[parsedIndex],
+          [field]: value,
+        };
+        return { ...prev, [arrayName]: updatedArray };
+      });
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Handle form submission
+  const handleLocalSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(category, formData);
+  };
+
+  const FormComponent = formComponents[category];
+
+  return (
+    <FormComponent
+      formData={formData}
+      handleFormChange={handleFormChange}
+      handleSubmit={handleLocalSubmit}
+      isLoading={isLoading}
+      uploadError={localUploadError}
+    />
+  );
+};
+
+// AccountPage Component
 const AccountPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [formData, setFormData] = useState({});
+  const [, setUploadError] = useState(null);
+  const { uploadImage, isLoading } = useCloudinaryUpload();
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
-  const handleLogout = () => dispatch(logout());
+  // Fetch category data
+  const categories = useSelector(selectAllCategories);
+  const loading = useSelector(selectCategoriesLoading);
+  const error = useSelector(selectCategoriesError);
 
+  // Fetch items on mount
+  useEffect(() => {
+    dispatch(productsThunks.fetchItemsById()); // Correct: "By" and "Id" capitalized
+    dispatch(doneThunks.fetchItemsById());
+    dispatch(exchangeThunks.fetchItemsById());
+    dispatch(freelanceThunks.fetchItemsById());
+    dispatch(transportThunks.fetchItemsById());
+  }, [dispatch]);
+
+  // Handle category selection
   const handleCategoryChange = (e) => {
-    const category = e.target.value;
-    setSelectedCategory(category);
-    setFormData(categoryModels[category] || {});
+    setSelectedCategory(e.target.value);
+    setUploadError(null);
   };
 
-  const handleFormChange = (e) => {
-    const { name, value, type, files } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "file" ? files[0] : value,
-    }));
-  };
+  // Handle form submission
+  const handleSubmit = (category, formData) => {
+    if (!user) {
+      setUploadError("You must be signed in to add items.");
+      return;
+    }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("selectedCategory :", selectedCategory);
-    // Dispatch the action and handle success or failure
-    dispatch(addItem({ categoryName: selectedCategory, data: formData }))
+    const thunks = {
+      Products: productsThunks,
+      Exchange: exchangeThunks,
+      Done: doneThunks,
+      Freelance: freelanceThunks,
+      Transport: transportThunks,
+    };
+
+    const categoryThunks = thunks[category];
+    if (!categoryThunks) {
+      setUploadError("Invalid category.");
+      return;
+    }
+
+    const dateFieldsByCategory = {
+      Products: ["createdAt", "updatedAt"],
+      Exchange: ["createdAt", "updatedAt", "closedAt"],
+      Transport: ["createdAt", "updatedAt", "activeUntil"],
+      Freelance: ["createdAt", "updatedAt"],
+      Done: ["createdAt", "updatedAt", "completionDate", "completedAt"],
+    };
+
+    const dataWithOwner = {
+      ...formData,
+      [category === "Freelance"
+        ? "freelancer"
+        : category === "Done"
+        ? "doner"
+        : "owner"]: {
+        id: user.uid,
+        name: user.displayName || "Anonymous",
+        email: user.email,
+        imageUrl: user.photoURL || "",
+      },
+    };
+
+    const dataWithDates = convertStringsToDates(
+      dataWithOwner,
+      dateFieldsByCategory[category] || []
+    );
+
+    const ModelClass = categoryModelsSubmit[category];
+    const item = new ModelClass(dataWithDates);
+
+    dispatch(categoryThunks.addItem(item))
+      .unwrap()
       .then(() => {
-        console.log("Submitted Data:", formData);
         setSelectedCategory("");
-        setFormData({});
-        // Optionally show success message here
+        setUploadError(null);
+        dispatch(categoryThunks.fetchItems());
       })
       .catch((error) => {
-        console.error("Error adding item:", error);
-        // Handle the error here
+        setUploadError(`Failed to add item: ${error.message}`);
       });
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="flex flex-col md:flex-row flex-1 p-6 gap-6">
+        {/* Left Sidebar */}
         <div className="flex flex-col md:w-1/3 bg-gray-100">
-          <div className="w-full bg-white shadow-md p-4 rounded-lg mb-6">
-            <img
-              src="https://picsum.photos/150"
-              alt="Profile"
-              className="w-24 h-24 rounded-full mb-4"
-            />
-            <h2 className="text-xl font-semibold">User Name</h2>
-            <p className="text-gray-600">user@example.com</p>
-          </div>
+          <ProfileSection user={user} />
           <Notifications />
         </div>
-        <div className="w-full flex flex-col bg-white shadow-md p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Listings</h3>
-          <Filters />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card
-                key={i}
-                item={{
-                  image: "https://picsum.photos/200",
-                  name: `Item ${i}`,
-                  category: `Category ${i}`,
-                  price: 100 * i,
-                  date: `2021-01-0${i}`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Middle Listings Section */}
+        <ListingsSection
+          loading={loading}
+          error={error}
+          shopItems={categories.products}
+          doneItems={categories.done}
+          exchangeItems={categories.exchange}
+          freelanceItems={categories.freelance}
+          transportItems={categories.transport}
+        />
+        {/* Right Form Section */}
         <div className="flex flex-col md:w-1/3 bg-gray-100">
-          <CategoryForm
-            {...{
-              selectedCategory,
-              categoryModels,
-              formData,
-              handleCategoryChange,
-              handleFormChange,
-              handleSubmit,
-            }}
-          />
-          <Settings handleLogout={handleLogout} />
+          {/* Render all FormWrappers, but only show the selected one */}
+          {Object.keys(categoryModels).map((category) => (
+            <div
+              key={category}
+              style={{
+                display: selectedCategory === category ? "block" : "none",
+              }}
+            >
+              <FormWrapper
+                category={category}
+                onSubmit={handleSubmit}
+                uploadImage={uploadImage}
+                isLoading={isLoading}
+              />
+            </div>
+          ))}
+          {/* Show category selector when no category is selected */}
+          {!selectedCategory && (
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Add New Listing</h2>
+              <select
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
+                disabled={isLoading}
+              >
+                <option value="">Select Category</option>
+                {Object.keys(categoryModels).map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@ import SignUpPage from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { PersistGate } from "redux-persist/integration/react";
 import ProductDetails from "./pages/ProductDetails";
+import ForgetPasswordPage from "./pages/ForgetPassword";
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
               <Route path="/transport" element={<Transport />} />
               <Route path="/login" element={<SignInPage />} />
               <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/forgot-password" element={<ForgetPasswordPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/freelance/gigs/:id" element={<GigDetails />} />
                 <Route path="/sell/products/:id" element={<ProductDetails />} />

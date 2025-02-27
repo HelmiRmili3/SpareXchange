@@ -1,13 +1,19 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage"; // Uses localStorage
+import storage from "redux-persist/lib/storage";
+
 import {
   auth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
+  googleProvider,
+  facebookProvider,
+  signInWithPopup,
 } from "../../firebase/firebase";
 import { AuthStatus } from "../types";
+
 // Initial state
 const initialState = {
   user: null,
@@ -15,6 +21,34 @@ const initialState = {
   status: AuthStatus.IDLE,
   error: null,
 };
+
+// Async Thunk for Google Sign-In
+export const signInWithGoogle = createAsyncThunk(
+  "auth/googleSignIn",
+  async (_, { rejectWithValue }) => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      return { user, token: user.refreshToken };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async Thunk for Facebook Sign-In
+export const signInWithFacebook = createAsyncThunk(
+  "auth/facebookSignIn",
+  async (_, { rejectWithValue }) => {
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+      return { user, token: user.refreshToken };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 // Async Thunk for Sign Up
 export const signUp = createAsyncThunk(
@@ -27,7 +61,7 @@ export const signUp = createAsyncThunk(
         password
       );
       const user = userCredential.user;
-      return { user, token: user.refreshToken }; // Store refresh token
+      return { user, token: user.refreshToken };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -45,7 +79,7 @@ export const signIn = createAsyncThunk(
         password
       );
       const user = userCredential.user;
-      return { user, token: user.refreshToken }; // Store refresh token
+      return { user, token: user.refreshToken };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -59,6 +93,20 @@ export const logout = createAsyncThunk(
     try {
       await signOut(auth);
       return null;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async Thunk for Password Reset
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (email, { rejectWithValue }) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return "Password reset email sent! Check your inbox.";
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -79,6 +127,7 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Sign Up
       .addCase(signUp.pending, (state) => {
         state.status = AuthStatus.LOADING;
       })
@@ -92,6 +141,8 @@ const authSlice = createSlice({
         state.status = AuthStatus.FAILED;
         state.error = action.payload;
       })
+
+      // Sign In
       .addCase(signIn.pending, (state) => {
         state.status = AuthStatus.LOADING;
       })
@@ -105,6 +156,38 @@ const authSlice = createSlice({
         state.status = AuthStatus.FAILED;
         state.error = action.payload;
       })
+
+      // Google Sign-In
+      .addCase(signInWithGoogle.pending, (state) => {
+        state.status = AuthStatus.LOADING;
+      })
+      .addCase(signInWithGoogle.fulfilled, (state, action) => {
+        state.status = AuthStatus.SUCCEEDED;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.error = null;
+      })
+      .addCase(signInWithGoogle.rejected, (state, action) => {
+        state.status = AuthStatus.FAILED;
+        state.error = action.payload;
+      })
+
+      // Facebook Sign-In
+      .addCase(signInWithFacebook.pending, (state) => {
+        state.status = AuthStatus.LOADING;
+      })
+      .addCase(signInWithFacebook.fulfilled, (state, action) => {
+        state.status = AuthStatus.SUCCEEDED;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.error = null;
+      })
+      .addCase(signInWithFacebook.rejected, (state, action) => {
+        state.status = AuthStatus.FAILED;
+        state.error = action.payload;
+      })
+
+      // Logout
       .addCase(logout.pending, (state) => {
         state.status = AuthStatus.LOADING;
       })
@@ -117,6 +200,17 @@ const authSlice = createSlice({
       .addCase(logout.rejected, (state, action) => {
         state.status = AuthStatus.FAILED;
         state.error = action.payload;
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.status = AuthStatus.LOADING;
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.status = AuthStatus.SUCCEEDED;
+        state.error = null;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.status = AuthStatus.FAILED;
+        state.error = action.payload;
       });
   },
 });
@@ -125,8 +219,8 @@ const authSlice = createSlice({
 const persistConfig = {
   key: "auth",
   storage,
-  whitelist: ["user", "token"], // Persist user and token
-  blacklist: ["status", "error"], // Don't persist loading/error states
+  whitelist: ["user", "token"],
+  blacklist: ["status", "error"],
 };
 
 // Wrap reducer with persistReducer
