@@ -1,4 +1,4 @@
-import DoneCard from "../DoneCard";
+import DoneCard from "./DoneCard";
 
 const DoneGrid = ({ items }) => {
   return (

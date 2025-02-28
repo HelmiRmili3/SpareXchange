@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const TransportCard = ({ item }) => {
   return (
-    <Link to={`/transports/${item.id}`} className="block">
+    <Link to={`/transport/${item.id}`} className="block">
       <div className="bg-white shadow-md p-4 rounded-lg cursor-pointer hover:shadow-lg transition">
         <img
           src={item.images[0] || "default-image.jpg"}

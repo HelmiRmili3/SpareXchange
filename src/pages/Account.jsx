@@ -229,7 +229,7 @@ const AccountPage = () => {
       .then(() => {
         setSelectedCategory("");
         setUploadError(null);
-        dispatch(categoryThunks.fetchItems());
+        dispatch(categoryThunks.fetchItemsById());
       })
       .catch((error) => {
         setUploadError(`Failed to add item: ${error.message}`);
@@ -255,40 +255,55 @@ const AccountPage = () => {
           transportItems={categories.transport}
         />
         {/* Right Form Section */}
-        <div className="flex flex-col md:w-1/3 bg-gray-100">
-          {/* Render all FormWrappers, but only show the selected one */}
-          {Object.keys(categoryModels).map((category) => (
-            <div
-              key={category}
-              style={{
-                display: selectedCategory === category ? "block" : "none",
-              }}
+        <div className="flex flex-col md:w-1/3 bg-gradient-to-b from-gray-100 to-gray-50 ">
+          {/* Category selector always visible */}
+          <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 w-full mt-0 mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-5 tracking-tight">
+              Add New Listing
+            </h2>
+            <select
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              className={`w-full p-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 ${
+                isLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:border-indigo-400"
+              }`}
+              disabled={isLoading}
             >
-              <FormWrapper
-                category={category}
-                onSubmit={handleSubmit}
-                uploadImage={uploadImage}
-                isLoading={isLoading}
-              />
-            </div>
-          ))}
-          {/* Show category selector when no category is selected */}
-          {!selectedCategory && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Add New Listing</h2>
-              <select
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-600"
-                disabled={isLoading}
-              >
-                <option value="">Select Category</option>
-                {Object.keys(categoryModels).map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+              <option value="" className="text-gray-500">
+                Select a Category
+              </option>
+              {Object.keys(categoryModels).map((category) => (
+                <option
+                  key={category}
+                  value={category}
+                  className="text-gray-800 py-2"
+                >
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Render all FormWrappers, only showing the selected one */}
+          {selectedCategory && (
+            <div className="w-full">
+              {Object.keys(categoryModels).map((category) => (
+                <div
+                  key={category}
+                  className={`transition-all duration-300 ease-in-out ${
+                    selectedCategory === category ? "block" : "hidden"
+                  }`}
+                >
+                  <FormWrapper
+                    category={category}
+                    onSubmit={handleSubmit}
+                    uploadImage={uploadImage}
+                    isLoading={isLoading}
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>

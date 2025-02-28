@@ -1,4 +1,4 @@
-import FreelanceCard from "../FreelanceCard";
+import FreelanceCard from "./FreelanceCard";
 
 const GigsGrid = ({ items }) => {
   return (

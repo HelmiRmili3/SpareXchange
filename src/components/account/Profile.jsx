@@ -3,14 +3,16 @@ import React from "react";
 
 const ProfileSection = ({ user }) => {
   return (
-    <div className="w-full bg-white shadow-md p-4 rounded-lg mb-6">
+    <div className="w-full bg-white shadow-lg p-4 rounded-xl mt-0 mb-6">
       <img
         src="https://picsum.photos/150"
         alt="Profile"
-        className="w-24 h-24 rounded-full mb-4 mx-auto"
+        className="w-28 h-28 rounded-full mb-4 mx-auto border-2 border-gray-200"
       />
-      <h2 className="text-xl font-semibold text-center">{user.displayName}</h2>
-      <p className="text-gray-600 text-center">{user.email}</p>
+      <h2 className="text-2xl font-bold text-gray-800 text-center tracking-tight">
+        {user.displayName}
+      </h2>
+      <p className="text-gray-600 text-center text-sm mt-1">{user.email}</p>
     </div>
   );
 };

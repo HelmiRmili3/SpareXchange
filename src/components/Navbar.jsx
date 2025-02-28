@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/auth/authSlice"; // Adjust path as needed
 
@@ -7,78 +7,53 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const dispatch = useDispatch();
+  const location = useLocation();
 
   const { user } = useSelector((state) => state.auth);
   const isAuthenticated = !!user;
+  const cartTotalQuantity = useSelector((state) => state.cart.totalQuantity); // Get cart item count
 
   const handleAccountClick = () => {
     setIsAccountOpen(!isAccountOpen);
   };
   const handleLogout = () => dispatch(logout());
 
+  const navItems = [
+    { to: "/", label: "Home" },
+    { to: "/sell", label: "Shop" },
+    { to: "/exchange", label: "Exchange" },
+    { to: "/donate", label: "Donate" },
+    { to: "/freelance", label: "Freelance" },
+    { to: "/transport", label: "Transport" },
+  ];
+
   return (
-    <nav className="bg-blue-600 text-white p-4 shadow-md fixed top-0 w-full z-50">
+    <nav className="bg-blue-600 text-white p-2 shadow-md fixed top-0 w-full z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <h1 className="text-2xl font-bold">SpareXchange</h1>
 
         {/* Desktop Menu */}
         <ul className="hidden md:flex space-x-6">
-          <li>
-            <Link to="/" className="hover:text-gray-300">
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link to="/sell" className="hover:text-gray-300">
-              Shop
-            </Link>
-          </li>
-          <li>
-            <Link to="/exchange" className="hover:text-gray-300">
-              Exchange
-            </Link>
-          </li>
-          <li>
-            <Link to="/donate" className="hover:text-gray-300">
-              Donate
-            </Link>
-          </li>
-          <li>
-            <Link to="/freelance" className="hover:text-gray-300">
-              Freelance
-            </Link>
-          </li>
-          <li>
-            <Link to="/transport" className="hover:text-gray-300">
-              Transport
-            </Link>
-          </li>
+          {navItems.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className={`px-3 py-1 rounded-full transition-colors duration-200 ${
+                  location.pathname === item.to
+                    ? "bg-white text-blue-600"
+                    : "hover:text-gray-300"
+                }`}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
         </ul>
 
         {/* Desktop Account or Auth Buttons */}
         <div className="hidden md:flex items-center space-x-4">
           {isAuthenticated ? (
             <div className="flex items-center space-x-4">
-              {/* Messages Button */}
-              <Link
-                to="/messages"
-                className="bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                  />
-                </svg>
-              </Link>
-
               {/* Notifications Button */}
               <Link
                 to="/notifications"
@@ -99,10 +74,10 @@ const Navbar = () => {
                 </svg>
               </Link>
 
-              {/* Shopping Bag Button */}
+              {/* Shopping Bag Button with Badge */}
               <Link
                 to="/cart"
-                className="bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
+                className="relative bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
               >
                 <svg
                   className="w-6 h-6"
@@ -117,9 +92,14 @@ const Navbar = () => {
                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                   />
                 </svg>
+                {cartTotalQuantity > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartTotalQuantity}
+                  </span>
+                )}
               </Link>
 
-              {/* Account Button with Dropdown Badge */}
+              {/* Account Button with Dropdown */}
               <div className="relative">
                 <button
                   onClick={handleAccountClick}
@@ -147,7 +127,6 @@ const Navbar = () => {
                   </span>
                 </button>
 
-                {/* Desktop Account Dropdown */}
                 {isAccountOpen && (
                   <div className="absolute top-10 mt-2 right-0 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-2 z-50">
                     <Link
@@ -243,74 +222,24 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden bg-blue-700 flex flex-col items-center py-4 mt-4 space-y-4">
-          <Link
-            to="/"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            to="/sell"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Shop
-          </Link>
-          <Link
-            to="/exchange"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Exchange
-          </Link>
-          <Link
-            to="/donate"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Donate
-          </Link>
-          <Link
-            to="/freelance"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Freelance
-          </Link>
-          <Link
-            to="/transport"
-            className="hover:text-gray-300"
-            onClick={() => setIsOpen(false)}
-          >
-            Transport
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`px-3 py-1 rounded-full transition-colors duration-200 ${
+                location.pathname === item.to
+                  ? "bg-white text-blue-600"
+                  : "hover:text-gray-300"
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
 
           {isAuthenticated ? (
             <div className="flex flex-col items-center space-y-4 w-full">
-              {/* Mobile Authenticated Buttons */}
               <div className="flex space-x-4">
-                {/* Messages Button */}
-                <Link
-                  to="/messages"
-                  className="bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                    />
-                  </svg>
-                </Link>
-
                 {/* Notifications Button */}
                 <Link
                   to="/notifications"
@@ -332,10 +261,10 @@ const Navbar = () => {
                   </svg>
                 </Link>
 
-                {/* Shopping Bag Button */}
+                {/* Shopping Bag Button with Badge */}
                 <Link
                   to="/cart"
-                  className="bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
+                  className="relative bg-white text-blue-600 p-2 rounded-full hover:bg-gray-200"
                   onClick={() => setIsOpen(false)}
                 >
                   <svg
@@ -351,9 +280,14 @@ const Navbar = () => {
                       d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                     />
                   </svg>
+                  {cartTotalQuantity > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartTotalQuantity}
+                    </span>
+                  )}
                 </Link>
 
-                {/* Account Button with Dropdown Badge */}
+                {/* Account Button with Dropdown */}
                 <div className="relative">
                   <button
                     onClick={handleAccountClick}

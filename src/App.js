@@ -10,13 +10,16 @@ import Freelance from "./pages/Freelance";
 import Transport from "./pages/Transport";
 import Footer from "./components/Footer";
 import AccountPage from "./pages/Account";
-import GigDetails from "./pages/GigDetails";
 import SignInPage from "./pages/Signin";
 import SignUpPage from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { PersistGate } from "redux-persist/integration/react";
-import ProductDetails from "./pages/ProductDetails";
+import ProductDetails from "./components/shop/ProductDetails";
 import ForgetPasswordPage from "./pages/ForgetPassword";
+import DoneDetails from "./components/donate/DoneDeatils";
+import GigDetails from "./components/freelance/GigDeatils";
+import ExchangeDetails from "./components/exchange/ExchangeDeatils";
+import TransportDetails from "./components/transport/TransportDetails";
 
 const App = () => {
   return (
@@ -36,8 +39,12 @@ const App = () => {
               <Route path="/signup" element={<SignUpPage />} />
               <Route path="/forgot-password" element={<ForgetPasswordPage />} />
               <Route element={<ProtectedRoute />}>
-                <Route path="/freelance/gigs/:id" element={<GigDetails />} />
+                <Route path="/products/:id" element={<ProductDetails />} />
+                <Route path="/exchanges/:id" element={<ExchangeDetails />} />
+                <Route path="/gigs/:id" element={<GigDetails />} />
                 <Route path="/sell/products/:id" element={<ProductDetails />} />
+                <Route path="/done/:id" element={<DoneDetails />} />
+                <Route path="/transport/:id" element={<TransportDetails />} />
                 <Route path="/account" element={<AccountPage />} />
               </Route>
             </Routes>

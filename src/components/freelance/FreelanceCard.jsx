@@ -7,7 +7,7 @@ const FreelanceCard = ({ item }) => {
   //   item.packages.find((pkg) => pkg.title.toLowerCase() === "basic") ||
   //   item.packages[0];
   return (
-    <Link to={`/freelance/${item.id}`} className="block">
+    <Link to={`/gigs/${item.id}`} className="block">
       <div className="bg-white shadow-md p-4 rounded-lg cursor-pointer hover:shadow-lg transition">
         <img
           src={item.images[0] || "default-image.jpg"}
@@ -15,7 +15,7 @@ const FreelanceCard = ({ item }) => {
           className="w-full h-40 object-cover rounded-md"
         />
         <h2 className="text-lg font-semibold mt-2">{item.gigTitle}</h2>
-        <p className="text-gray-600">by {item.owner.name}</p>
+        <p className="text-gray-600">by {item.freelancer.name}</p>
         {/* <p className="text-blue-600 font-bold">${basicPackage.price}</p>
         <p className="text-gray-400 text-sm">
           Delivery: {basicPackage.deliveryTime} days

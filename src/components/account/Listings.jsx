@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import ProductCard from "../ProductCard";
-import DoneCard from "../DoneCard";
-import ExchangeCard from "../ExchangeCard";
-import FreelanceCard from "../FreelanceCard";
-import TransportCard from "../TransportCard";
+import ProductCard from "../shop/ProductCard";
+import DoneCard from "../donate/DoneCard";
+import ExchangeCard from "../exchange/ExchangeCard";
+import FreelanceCard from "../freelance/FreelanceCard";
+import TransportCard from "../transport/TransportCard";
 
 const ListingsSection = ({
   loading,
@@ -35,35 +35,32 @@ const ListingsSection = ({
         return <ProductCard key={item.id} item={item} />;
       case "done":
         return <DoneCard key={item.id} item={item} />;
-
       case "exchange":
         return <ExchangeCard key={item.id} item={item} />;
-
       case "freelance":
         return <FreelanceCard key={item.id} item={item} />;
-
       case "transport":
         return <TransportCard key={item.id} item={item} />;
-
       default:
         return null; // Fallback, though this shouldn't happen with fixed categories
     }
   };
 
   return (
-    <div className="w-full flex flex-col bg-white shadow-md p-4 rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">Listings</h3>
-
+    <div className="w-full flex flex-col p-4 rounded-xl bg-gradient-to-b from-gray-100 to-gray-50 shadow-md mt-0">
+      <h3 className="text-xl font-bold text-gray-800 mb-4 tracking-tight">
+        Your Listings
+      </h3>
       {/* Category Navigation */}
-      <div className="mb-6">
-        <nav className="flex flex-wrap gap-2">
+      <div className="mb-6 w-full">
+        <nav className="flex flex-wrap gap-3">
           {categories.map((category) => (
             <button
               key={category}
-              className={`px-4 py-2 rounded-md capitalize ${
+              className={`flex-1 min-w-[80px] px-4 py-2 rounded-lg capitalize text-sm font-medium transition-all duration-200 ${
                 selectedCategory === category
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  ? "bg-indigo-600 text-white shadow-inner"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-800"
               }`}
               onClick={() => setSelectedCategory(category)}
             >
@@ -75,15 +72,15 @@ const ListingsSection = ({
 
       {/* Listings Display */}
       {loading ? (
-        <p className="text-center text-gray-600">Loading listings...</p>
+        <p className="text-center text-gray-600 text-lg">Loading listings...</p>
       ) : error ? (
-        <p className="text-center text-red-600">Error: {error}</p>
+        <p className="text-center text-red-600 text-lg">Error: {error}</p>
       ) : displayedItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 w-full">
           {displayedItems.map((item) => renderCard(item))}
         </div>
       ) : (
-        <p className="text-center text-gray-600">
+        <p className="text-center text-gray-600 text-lg">
           No listings available for {selectedCategory}.
         </p>
       )}

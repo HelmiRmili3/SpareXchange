@@ -212,6 +212,7 @@ export const freelanceThunks = createCategoryThunks("Freelance");
 export const transportThunks = createCategoryThunks("Transport");
 
 // Export reducers
+
 const categoryReducers = {
   products: productsSlice.reducer,
   exchange: exchangeSlice.reducer,

@@ -1,4 +1,4 @@
-import ExchangeCard from "../ExchangeCard";
+import ExchangeCard from "./ExchangeCard";
 
 const ExchangeGrid = ({ items }) => {
   return (
